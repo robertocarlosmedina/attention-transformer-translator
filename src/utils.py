@@ -11,7 +11,7 @@ def train(model, iterator, optimizer, criterion, clip):
     epoch_loss = 0
 
     for i, batch in enumerate(iterator):
-        print(i)
+        print(i, len(iterator))
 
         src = batch.src
         trg = batch.trg
