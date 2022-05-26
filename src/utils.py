@@ -1,7 +1,9 @@
-import torch
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+
+from nltk.translate.meteor_score import meteor_score
+
+import torch
 
 
 def train(model, iterator, optimizer, criterion, clip):
@@ -171,4 +173,3 @@ def load_checkpoint(checkpoint, model, optimizer):
     print("=> Loading checkpoint")
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
-
