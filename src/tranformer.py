@@ -1,4 +1,3 @@
-from calendar import EPOCH
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -31,17 +30,17 @@ from src.utils import display_attention, load_checkpoint, save_checkpoint, \
 
 
 SEED = 1234
-BATCH_SIZE = 12
+BATCH_SIZE = 10
 HID_DIM = 256
-ENC_LAYERS = 3
-DEC_LAYERS = 3
+ENC_LAYERS = 4
+DEC_LAYERS = 4
 ENC_HEADS = 8
 DEC_HEADS = 8
 ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 3e-4
 N_EPOCHS = 100
 CLIP = 1
 
@@ -161,9 +160,9 @@ class Transformer():
 
         print(f' Epoch: {epoch+1:03}/{N_EPOCHS} | Time: {epoch_time}')
         print(
-            f' Train Loss: {train_loss:.3f} | Train Acc: {train_accuracy} | Train PPL: {math.exp(train_loss):7.3f}')
+            f' Train Loss: {train_loss:.3f} | Train Acc: {train_accuracy:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(
-            f' Val. Loss: {valid_loss:.3f} | Train Acc: {valid_accuracy} | Val. PPL: {math.exp(valid_loss):7.3f}')
+            f' Val. Loss: {valid_loss:.3f} | Val Acc: {valid_accuracy:.3f} | Val. PPL: {math.exp(valid_loss):7.3f}')
     
     def save_train_metrics(self, epoch: int, train_loss: float, 
             train_accuracy: float, valid_loss: float, valid_accuracy:float) -> None:
