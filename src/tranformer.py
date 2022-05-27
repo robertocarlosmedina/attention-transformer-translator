@@ -1,3 +1,4 @@
+from calendar import EPOCH
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,7 +27,7 @@ from src.decoder import Decoder
 from src.seq2seq import Seq2Seq
 from src.gammar_checker import Grammar_checker
 from src.utils import display_attention, load_checkpoint, save_checkpoint, \
-    translate_sentence, count_parameters, epoch_time, train, evaluate
+    translate_sentence, count_parameters, epoch_time, train, evaluate, count_parameters
 
 
 SEED = 1234
@@ -41,7 +42,7 @@ DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
 LEARNING_RATE = 0.0005
-N_EPOCHS = 1
+N_EPOCHS = 100
 CLIP = 1
 
 
@@ -86,8 +87,8 @@ class Transformer():
 
     def get_dataset_data(self) -> None:
         self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".cv", ".en"), fields=(self.SRC, self.TRG),
-                                                            test="test", path=".data/criolSet"
-                                                            )
+                                                                           test="test", path=".data/criolSet"
+                                                                           )
 
         self.SRC.build_vocab(self.train_data, min_freq=2)
         self.TRG.build_vocab(self.train_data, min_freq=2)
@@ -155,6 +156,56 @@ class Transformer():
         if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.xavier_uniform_(m.weight.data)
 
+    def show_train_metrics(self, epoch: int, epoch_time: str, train_loss: float, 
+            train_accuracy: float, valid_loss: float, valid_accuracy:float) -> None:
+
+        print(f' Epoch: {epoch+1:03}/{N_EPOCHS} | Time: {epoch_time}')
+        print(
+            f' Train Loss: {train_loss:.3f} | Train Acc: {train_accuracy} | Train PPL: {math.exp(train_loss):7.3f}')
+        print(
+            f' Val. Loss: {valid_loss:.3f} | Train Acc: {valid_accuracy} | Val. PPL: {math.exp(valid_loss):7.3f}')
+    
+    def save_train_metrics(self, epoch: int, train_loss: float, 
+            train_accuracy: float, valid_loss: float, valid_accuracy:float) -> None:
+        """
+            Save the training metrics to be ploted in the tensorboard.
+        """
+        # All stand alone metrics
+        self.writer.add_scalar(
+            "Training Loss", train_loss, global_step=epoch)
+        self.writer.add_scalar(
+            "Training Accuracy", train_accuracy, global_step=epoch)
+        self.writer.add_scalar(
+            "Validation Loss", valid_loss, global_step=epoch)
+        self.writer.add_scalar(
+            "Validation Accuracy", valid_accuracy, global_step=epoch)
+        
+        # Mixing Train Metrics
+        self.writer.add_scalars(
+            "Training Metrics (Train Loss / Train Accurary)", {
+                "Train Loss": train_loss, "Train Accurary": train_accuracy},
+            global_step=epoch
+        )
+
+        # Mixing Validation Metrics
+        self.writer.add_scalars(
+            "Training Metrics (Validation Loss / Validation Accurary)", {
+                "Validation Loss": valid_loss, "Validation Accuracy": valid_accuracy},
+            global_step=epoch
+        )
+        
+        # Mixing Train and Validation Metrics
+        self.writer.add_scalars(
+            "Training Metrics (Train Loss / Validation Loss)", {
+                "Train Loss": train_loss, "Validation Loss": valid_loss},
+            global_step=epoch
+        )
+        self.writer.add_scalars(
+            "Training Metrics (Train Accurary / Validation Accuracy)", {
+                "Train Accurary": train_accuracy, "Validation Accuracy": valid_accuracy},
+            global_step=epoch
+        )
+
     def train_model(self) -> None:
 
         best_valid_loss = float('inf')
@@ -163,9 +214,9 @@ class Transformer():
 
             start_time = time.time()
 
-            train_loss = train(self.model, self.train_iterator,
-                               self.optimizer, self.criterion, CLIP)
-            valid_loss = evaluate(
+            train_loss, train_accuracy = train(self.model, self.train_iterator,
+                                               self.optimizer, self.criterion, CLIP)
+            valid_loss, valid_accuracy = evaluate(
                 self.model, self.valid_iterator, self.criterion)
 
             end_time = time.time()
@@ -179,21 +230,13 @@ class Transformer():
                     "optimizer": self.optimizer.state_dict(),
                 }
                 save_checkpoint(checkpoint, "my_checkpoint.pth.tar")
-
-            print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-            print(
-                f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-            print(
-                f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
-            
-            # plot to tensorboard
-            self.writer.add_scalar(
-                "Training Loss", train_loss, global_step=epoch)
-            self.writer.add_scalar(
-                "Validation Loss", valid_loss, global_step=epoch)
-            self.writer.add_scalars(
-                "Training metrics", {"Train Loss": train_loss, "Validation Loss": valid_loss}, 
-                global_step=epoch
+            self.show_train_metrics(
+                epoch, f"{epoch_mins}m {epoch_secs}s", train_loss,
+                train_accuracy, valid_loss, valid_accuracy
+            )
+            self.save_train_metrics(
+                epoch, train_loss,
+                train_accuracy, valid_loss, valid_accuracy
             )
 
     def evalute_model(self) -> None:
@@ -220,13 +263,15 @@ class Transformer():
         print("\n                  CV Creole Translator Test ")
         print("-------------------------------------------------------------\n")
         for data_tuple in test_data:
-            src, trg =  " ".join(data_tuple[0]), self.untokenize_sentence(data_tuple[1])
+            src, trg = " ".join(
+                data_tuple[0]), self.untokenize_sentence(data_tuple[1])
             translation, _ = translate_sentence(
                 spacy_cv, src, self.SRC, self.TRG, self.model, self.device
             )
             print(f'  Source (cv): {src}')
             print(f'  Target (en): {trg}')
-            print(f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
+            print(
+                f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
 
     def console_model_test(self) -> None:
         os.system("clear")
@@ -236,13 +281,14 @@ class Transformer():
             source = str(input(f'  Source (cv): '))
             translation, _ = translate_sentence(
                 spacy_cv, source, self.SRC, self.TRG, self.model, self.device)
-            
-            print(f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
-    
+
+            print(
+                f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
+
     def get_translation(self, sentence: str) -> str:
         translation, _ = translate_sentence(
-                spacy_cv, sentence, self.SRC, self.TRG, self.model, self.device)
-        
+            spacy_cv, sentence, self.SRC, self.TRG, self.model, self.device)
+
         return self.untokenize_sentence(translation)
 
     def untokenize_sentence(self, tokens: list) -> str:
@@ -253,7 +299,7 @@ class Transformer():
         tokens = [token for token in tokens if token not in self.special_tokens]
         translated_sentence = TreebankWordDetokenizer().detokenize(tokens)
         return self.grammar.check_sentence(translated_sentence)
-    
+
     def get_test_data(self) -> list:
         return [(test.src, test.trg) for test in self.test_data.examples[0:20]]
 
@@ -287,7 +333,7 @@ class Transformer():
 
         score = bleu_score(outputs, targets)
         print(f"Bleu score: {score * 100:.2f}")
-    
+
     def calculate_meteor_score(self):
         """
             METEOR (Metric for Evaluation of Translation with Explicit ORdering) is 
@@ -316,6 +362,8 @@ class Transformer():
             [print(f'      - {prediction}') for prediction in predictions]
             print("\n")
 
-        score =  sum(all_meteor_scores)/len(all_meteor_scores)
+        score = sum(all_meteor_scores)/len(all_meteor_scores)
         print(f"Meteor score: {score * 100:.2f}")
-        
+
+    def count_hyperparameters(self) -> None:
+        print(f"The model has: {count_parameters(self.model)}")

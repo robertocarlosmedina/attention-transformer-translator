@@ -1,20 +1,20 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from nltk.translate.meteor_score import meteor_score
-
 import torch
 
 
-def train(model, iterator, optimizer, criterion, clip):
-
+def train(model, iterator, optimizer, criterion, clip, **kwargs):
+    
     model.train()
 
     epoch_loss = 0
+    train_acc, correct_train, target_count = 0, 0, 0
+
+    len_iterator = len(iterator)
 
     for i, batch in enumerate(iterator):
-        print(i, len(iterator))
-
+        print(f" Training Iteration: {i+1:04}/{len_iterator}")
         src = batch.src
         trg = batch.trg
 
@@ -35,6 +35,11 @@ def train(model, iterator, optimizer, criterion, clip):
 
         loss = criterion(output, trg)
 
+        _, predicted = torch.max(output.data, 1)
+        target_count += trg.size(0)
+        correct_train += (trg == predicted).sum().item()
+        train_acc += (correct_train) / target_count
+
         loss.backward()
 
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -43,7 +48,7 @@ def train(model, iterator, optimizer, criterion, clip):
 
         epoch_loss += loss.item()
 
-    return epoch_loss / len(iterator)
+    return epoch_loss / len_iterator, train_acc / len_iterator
 
 
 def evaluate(model, iterator, criterion):
@@ -51,6 +56,7 @@ def evaluate(model, iterator, criterion):
     model.eval()
 
     epoch_loss = 0
+    train_acc, correct_train, target_count = 0, 0, 0
 
     with torch.no_grad():
 
@@ -74,9 +80,14 @@ def evaluate(model, iterator, criterion):
 
             loss = criterion(output, trg)
 
+            _, predicted = torch.max(output.data, 1)
+            target_count += trg.size(0)
+            correct_train += (trg == predicted).sum().item()
+            train_acc += (correct_train) / target_count
+
             epoch_loss += loss.item()
 
-    return epoch_loss / len(iterator)
+    return epoch_loss / len(iterator), train_acc / len(iterator)
     
 
 def translate_sentence(cv_nlp, sentence, src_field, trg_field, model, device, max_len = 50):
