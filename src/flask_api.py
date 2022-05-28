@@ -24,7 +24,7 @@ class Translation(Resource):
         target_sentence = ""
         if source_sentence:
             valid = True
-        target_sentence = transformer.translate_sentence_untokenized()
+        target_sentence = transformer.get_translation(source_sentence)
         data = {"data": [{"translation": target_sentence,"valid": valid}]}
         return jsonify(data)
 
