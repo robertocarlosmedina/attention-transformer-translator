@@ -1,5 +1,5 @@
 import argparse
-import os
+# import os
 
 arg_pr = argparse.ArgumentParser()
 
@@ -19,7 +19,8 @@ from src.tranformer import Transformer
 from src.flask_api import Resfull_API
 
 def make_matrix_confusion() -> None:
-    transformer.generate_confusion_matrix("Oi, manera ke bô ta?")
+    sentence = input("  Your Sentence: ")
+    transformer.generate_confusion_matrix(sentence)
 
 
 transformer = Transformer()

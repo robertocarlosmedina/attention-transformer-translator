@@ -142,7 +142,7 @@ class Transformer():
         self.criterion = nn.CrossEntropyLoss(ignore_index=target_PAD_IDX)
 
         try:
-            load_checkpoint(torch.load("my_checkpoint.pth.tar"),
+            load_checkpoint(torch.load("checkpoints/my_checkpoint.pth.tar"),
                             self.model, self.optimizer)
         except:
             print("No existent checkpoint to load.")
