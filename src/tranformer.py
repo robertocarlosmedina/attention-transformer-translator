@@ -8,6 +8,8 @@ from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
 from torchtext.data.metrics import bleu_score
 
+from pyter import ter
+
 import spacy
 
 import numpy as np
@@ -25,8 +27,9 @@ from src.encoder import Encoder
 from src.decoder import Decoder
 from src.seq2seq import Seq2Seq
 from src.gammar_checker import Grammar_checker
-from src.utils import display_attention, load_checkpoint, save_checkpoint, \
-    translate_sentence, count_parameters, epoch_time, train, evaluate, count_parameters
+from src.utils import bleu, display_attention, load_checkpoint, save_checkpoint, \
+    translate_sentence, count_parameters, epoch_time, train, evaluate, count_parameters,\
+    bleu, meteor_score
 
 
 SEED = 1234
@@ -56,7 +59,7 @@ spacy_cv = spacy.load('pt_core_news_sm')
 spacy_en = spacy.load('en_core_web_sm')
 
 
-class Transformer():
+class Transformer_Translator():
 
     def __init__(self) -> None:
 
@@ -228,7 +231,7 @@ class Transformer():
                     "state_dict": self.model.state_dict(),
                     "optimizer": self.optimizer.state_dict(),
                 }
-                save_checkpoint(checkpoint, "my_checkpoint.pth.tar")
+                save_checkpoint(checkpoint, "checkpoints/my_checkpoint.pth.tar")
             self.show_train_metrics(
                 epoch, f"{epoch_mins}m {epoch_secs}s", train_loss,
                 train_accuracy, valid_loss, valid_accuracy
@@ -319,7 +322,7 @@ class Transformer():
             for _ in range(3):
                 prediction, _ = translate_sentence(
                     spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
-                predictions.append(prediction)
+                predictions.append(prediction[:-1])
 
             print(f'  Source (cv): {" ".join(src)}')
             print(f'  Target (en): {trg}')
@@ -327,10 +330,10 @@ class Transformer():
             [print(f'      - {prediction}') for prediction in predictions]
             print("\n")
 
-            targets.append([trg])
-            outputs.append(prediction)
+            targets.append(trg)
+            outputs.append(predictions)
 
-        score = bleu_score(outputs, targets)
+        score = bleu_score(targets, outputs)
         print(f"Bleu score: {score * 100:.2f}")
 
     def calculate_meteor_score(self):
@@ -356,7 +359,7 @@ class Transformer():
                 predictions, self.untokenize_sentence(trg)
             ))
             print(f'  Source (cv): {" ".join(src)}')
-            print(f'  Target (en): {trg}')
+            print(f'  Target (en): {self.untokenize_sentence(trg)}')
             print(f'  Predictions (en): ')
             [print(f'      - {prediction}') for prediction in predictions]
             print("\n")
@@ -364,5 +367,28 @@ class Transformer():
         score = sum(all_meteor_scores)/len(all_meteor_scores)
         print(f"Meteor score: {score * 100:.2f}")
 
+    def calculate_ter(self):
+        """
+            TER. Translation Error Rate (TER) is a character-based automatic metric for 
+            measuring the number of edit operations needed to transform the 
+            machine-translated output into a human translated reference.
+        """
+        all_translation_ter = 0
+
+        for example in self.test_data:
+            src = vars(example)["src"]
+            trg = vars(example)["trg"]
+
+            prediction, _ = translate_sentence(
+                spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
+
+            print(f'  Source (cv): {" ".join(src)}')
+            print(f'  Target (en): {" ".join(trg)}')
+            print(f'  Predictions (en): {" ".join(prediction)}\n')
+
+            all_translation_ter += ter(prediction, trg)
+        print(f"Bleu score: {all_translation_ter/len(self.test_data) * 100:.2f}")
+
     def count_hyperparameters(self) -> None:
-        print(f"The model has: {count_parameters(self.model)}")
+        print(
+            f'\nThe model has {count_parameters(self.model):,} trainable parameters')

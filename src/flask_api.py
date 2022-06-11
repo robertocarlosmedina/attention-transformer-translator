@@ -2,7 +2,7 @@ from flask_restful import Api, Resource, reqparse
 from flask import Flask, jsonify
 from flask_cors import CORS
 import transformers
-from src.tranformer import Transformer
+from src.tranformer import Transformer_Translator
 
 
 app = Flask(__name__)
@@ -11,7 +11,7 @@ api = Api(app)
 
 request_put_args = reqparse.RequestParser()
 request_put_args.add_argument("sentence", type=str, help="Sentece to be translated.")
-transformer = Transformer()
+transformer = Transformer_Translator()
 
 
 class Translation(Resource):
