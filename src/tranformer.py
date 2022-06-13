@@ -387,7 +387,7 @@ class Transformer_Translator():
             print(f'  Predictions (en): {" ".join(prediction)}\n')
 
             all_translation_ter += ter(prediction, trg)
-        print(f"Bleu score: {all_translation_ter/len(self.test_data) * 100:.2f}")
+        print(f"TER score: {all_translation_ter/len(self.test_data) * 100:.2f}")
 
     def count_hyperparameters(self) -> None:
         print(
