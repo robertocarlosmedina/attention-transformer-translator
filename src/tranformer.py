@@ -259,9 +259,8 @@ class Transformer_Translator():
 
         display_attention(spacy_cv, src, translation, attention)
 
-    def test_model(self, test_data=None) -> None:
-        if not test_data:
-            test_data = self.get_test_data()
+    def test_model(self, test_data) -> None:
+        test_data = self.get_test_data()
         os.system("clear")
         print("\n                  CV Creole Translator Test ")
         print("-------------------------------------------------------------\n")
