@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from torchtext.data.metrics import bleu_score
-from nltk.translate.meteor_score import meteor_score
 
 import torch
 
@@ -168,49 +166,6 @@ def display_attention(cv_nlp, sentence, translation, attention, n_heads = 1, n_r
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-def bleu(untokenize_translation, spacy_cv, data, model, cv_creole, english, device):
-    targets = []
-    outputs = []
-
-    for example in data:
-        src = vars(example)["src"]
-        trg = vars(example)["trg"]
-
-        prediction = translate_sentence(
-            spacy_cv, model, src, cv_creole, english, device)
-        prediction = prediction[:-1]  # remove <eos> token
-        print(
-            f"CV: {untokenize_translation(src)}  =>  EN: {untokenize_translation(prediction)}")
-
-        targets.append([trg])
-        outputs.append(prediction)
-
-    return bleu_score(outputs, targets)
-
-
-def meteor(untokenize_translation, spacy_cv, data, model, cv_creole, english, device):
-    all_meteor_scores = []
-
-    for example in data:
-        src = vars(example)["src"]
-        trg = vars(example)["trg"]
-        print(
-            f"CV: {untokenize_translation(src)}  =>  EN: {untokenize_translation(trg)}")
-        predictions = []
-
-        for _ in range(4):
-            prediction = translate_sentence(
-                spacy_cv, model, src, cv_creole, english, device)
-            prediction = prediction[:-1]  # remove <eos> token
-            predictions.append(untokenize_translation(prediction))
-
-        all_meteor_scores.append(meteor_score(
-            predictions, untokenize_translation(trg)
-        ))
-
-    return sum(all_meteor_scores)/len(all_meteor_scores)
 
 
 def epoch_time(start_time, end_time):
