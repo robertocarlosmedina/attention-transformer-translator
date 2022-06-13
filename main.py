@@ -19,7 +19,6 @@ from src.flask_api import Resfull_API
 
 
 transformer_translator = Transformer_Translator()
-test_data = transformer_translator.get_test_data()
 
 
 def make_matrix_confusion() -> None:

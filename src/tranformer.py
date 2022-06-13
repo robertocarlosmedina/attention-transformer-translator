@@ -88,9 +88,10 @@ class Transformer_Translator():
         self.setting_up_train_configurations()
 
     def get_dataset_data(self) -> None:
-        self.train_data, self.valid_data, self.test_data = Multi30k.splits(exts=(".cv", ".en"), fields=(self.SRC, self.TRG),
-                                                                           test="test", path=".data/criolSet"
-                                                                           )
+        self.train_data, self.valid_data, self.test_data = Multi30k.splits(
+            exts=(".cv", ".en"), fields=(self.SRC, self.TRG),
+            test="test", path=".data/criolSet"
+        )
 
         self.SRC.build_vocab(self.train_data, min_freq=2)
         self.TRG.build_vocab(self.train_data, min_freq=2)
