@@ -7,7 +7,7 @@ arg_pr.add_argument(
     "-a", "--action", nargs="+", required=True,
     choices=[
         "console", "train", "test_model", "flask_api", "blue_score",
-        "meteor_score", "matrix_confusion", "count_parameters", "ter_score"
+        "meteor_score", "confusion_matrix", "count_parameters", "ter_score"
     ],
     help="Add an action to run this project"
 )
@@ -37,7 +37,7 @@ def execute_main_actions():
         "flask_api": Resfull_API.start,
         "blue_score": transformer_translator.calculate_blue_score,
         "meteor_score": transformer_translator.calculate_meteor_score, 
-        "matrix_confusion": make_matrix_confusion,
+        "confusion_matrix": make_matrix_confusion,
         "count_parameters": transformer_translator.count_hyperparameters,
         "ter_score": transformer_translator.calculate_ter
     }
