@@ -1,3 +1,5 @@
+from attr import attrib, attrs
+from termcolor import colored
 import math
 import numpy as np
 
@@ -14,7 +16,7 @@ from src.decoder import Decoder
 from src.seq2seq import Seq2Seq
 from src.gammar_checker import Grammar_checker
 from src.utils import display_attention, load_checkpoint, save_checkpoint, \
-    translate_sentence, count_parameters, epoch_time, train, evaluate, count_parameters
+    translate_sentence, epoch_time, train, evaluate
 
 import time
 
@@ -68,6 +70,13 @@ class Transformer_Translator():
         self.special_tokens = ['<sos>', '<eos>', '<pad>', '<unk>']
         self.writer = SummaryWriter()
 
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu')
+        self.get_dataset_data()
+        self.setting_up_train_configurations()
+
+    def get_dataset_data(self) -> None:
+
         self.SRC = Field(tokenize=self.tokenize_cv,
                          init_token='<sos>',
                          eos_token='<eos>',
@@ -79,12 +88,7 @@ class Transformer_Translator():
                          eos_token='<eos>',
                          lower=True,
                          batch_first=True)
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
-        self.get_dataset_data()
-        self.setting_up_train_configurations()
 
-    def get_dataset_data(self) -> None:
         self.train_data, self.valid_data, self.test_data = Multi30k.splits(
             exts=(".cv", ".en"), fields=(self.SRC, self.TRG),
             test="test", path=".data/criolSet"
@@ -101,6 +105,8 @@ class Transformer_Translator():
 
         self.INPUT_DIM = len(self.SRC.vocab)
         self.OUTPUT_DIM = len(self.TRG.vocab)
+
+        print(colored("=> Data has been collected and processed", 'cyan'))
 
     def tokenize_cv(self, text: str):
         """
@@ -252,11 +258,11 @@ class Transformer_Translator():
         )
 
         print(f'Source (cv): {src}')
-        print(f'Predicted (en): {translation}')
+        print(colored(f'Predicted (en): {translation}', 'blue', attrs=['bold']))
 
         display_attention(spacy_cv, src, translation, attention)
 
-    def test_model(self, test_data) -> None:
+    def test_model(self) -> None:
         test_data = self.get_test_data()
         os.system("clear")
         print("\n                  CV Creole Translator Test ")
@@ -268,9 +274,8 @@ class Transformer_Translator():
                 spacy_cv, src, self.SRC, self.TRG, self.model, self.device
             )
             print(f'  Source (cv): {src}')
-            print(f'  Target (en): {trg}')
-            print(
-                f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
+            print(colored(f'  Target (en): {trg}', attrs=['bold']))
+            print(colored(f'  Predicted (en): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold']))
 
     def console_model_test(self) -> None:
         os.system("clear")
@@ -282,7 +287,8 @@ class Transformer_Translator():
                 spacy_cv, source, self.SRC, self.TRG, self.model, self.device)
 
             print(
-                f'  Predicted (en): {self.untokenize_sentence(translation)}\n')
+                colored(f'  Predicted (en): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold'])
+            )
 
     def get_translation(self, sentence: str) -> str:
         translation, _ = translate_sentence(
@@ -298,6 +304,9 @@ class Transformer_Translator():
         tokens = [token for token in tokens if token not in self.special_tokens]
         translated_sentence = TreebankWordDetokenizer().detokenize(tokens)
         return self.grammar.check_sentence(translated_sentence)
+
+    def remove_special_notation(self, sentence: list):
+        return [token for token in sentence if token not in self.special_tokens]
 
     def get_test_data(self) -> list:
         return [(test.src, test.trg) for test in self.test_data.examples[0:20]]
@@ -322,16 +331,17 @@ class Transformer_Translator():
                 predictions.append(prediction[:-1])
 
             print(f'  Source (cv): {" ".join(src)}')
-            print(f'  Target (en): {trg}')
-            print(f'  Predictions (en):')
-            [print(f'      - {prediction}') for prediction in predictions]
+            print(colored(f'  Target (en): {trg}', attrs=['bold']))
+            print(colored(f'  Predictions (en):', 'blue'))
+            [print(colored(f'      - {prediction}', 'blue', attrs=['bold'])) 
+                for prediction in predictions]
             print("\n")
 
             targets.append(trg)
             outputs.append(predictions)
 
         score = bleu_score(targets, outputs)
-        print(f"Bleu score: {score * 100:.2f}")
+        print(colored(f"==> Bleu score: {score * 100:.2f}\n", 'blue'))
 
     def calculate_meteor_score(self):
         """
@@ -344,25 +354,28 @@ class Transformer_Translator():
 
         for example in self.test_data:
             src = vars(example)["src"]
-            trg = vars(example)["trg"]
+            trg = " ".join(vars(example)["trg"])
             predictions = []
 
             for _ in range(4):
                 prediction, _ = translate_sentence(
                     spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
-                predictions.append(self.untokenize_sentence(prediction))
+                
+                prediction = self.remove_special_notation(prediction)
+                predictions.append(" ".join(prediction))
 
             all_meteor_scores.append(meteor_score(
-                predictions, self.untokenize_sentence(trg)
+                predictions, trg
             ))
             print(f'  Source (cv): {" ".join(src)}')
-            print(f'  Target (en): {self.untokenize_sentence(trg)}')
-            print(f'  Predictions (en): ')
-            [print(f'      - {prediction}') for prediction in predictions]
+            print(colored(f'  Target (en): {trg}', attrs=['bold']))
+            print(colored(f'  Predictions (en): ', 'blue', attrs=['bold']))
+            [print(colored(f'      - {prediction}', 'blue', attrs=['bold'])) 
+                for prediction in predictions]
             print("\n")
 
         score = sum(all_meteor_scores)/len(all_meteor_scores)
-        print(f"Meteor score: {score * 100:.2f}")
+        print(colored(f"==> Meteor score: {score * 100:.2f}\n", 'blue'))
 
     def calculate_ter(self):
         """
@@ -378,14 +391,16 @@ class Transformer_Translator():
 
             prediction, _ = translate_sentence(
                 spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
+            
+            prediction = self.remove_special_notation(prediction)
 
             print(f'  Source (cv): {" ".join(src)}')
-            print(f'  Target (en): {" ".join(trg)}')
-            print(f'  Predictions (en): {" ".join(prediction)}\n')
+            print(colored(f'  Target (en): {" ".join(trg)}', attrs=['bold']))
+            print(colored(f'  Predictions (en): {" ".join(prediction)}\n', 'blue', attrs=['bold']))
 
             all_translation_ter += ter(prediction, trg)
-        print(f"TER score: {all_translation_ter/len(self.test_data) * 100:.2f}")
+        print(colored(f"==>TER score: {all_translation_ter/len(self.test_data) * 100:.2f}", 'blue'))
 
     def count_hyperparameters(self) -> None:
-        print(
-            f'\nThe model has {count_parameters(self.model):,} trainable parameters')
+        total_parameters =  sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print(colored(f'\n==> The model has {total_parameters:,} trainable parameters\n', 'blue'))

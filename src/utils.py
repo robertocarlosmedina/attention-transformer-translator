@@ -1,3 +1,5 @@
+from termcolor import colored
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -164,10 +166,6 @@ def display_attention(cv_nlp, sentence, translation, attention, n_heads = 1, n_r
     plt.close()
 
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
 def epoch_time(start_time, end_time):
     elapsed_time = end_time - start_time
     elapsed_mins = int(elapsed_time / 60)
@@ -176,11 +174,11 @@ def epoch_time(start_time, end_time):
 
 
 def save_checkpoint(state, filename="checkpoints/my_checkpoint.pth.tar"):
-    print("=> Saving checkpoint")
+    print(colored("=> Saving checkpoint", 'cyan'))
     torch.save(state, filename)
 
 
 def load_checkpoint(checkpoint, model, optimizer):
-    print("=> Loading checkpoint")
+    print(colored("=> Loading checkpoint", "cyan"))
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
