@@ -269,7 +269,7 @@ class Transformer_Translator():
         print("-------------------------------------------------------------\n")
         for data_tuple in test_data:
             src, trg = " ".join(
-                data_tuple[0]), self.untokenize_sentence(data_tuple[1])
+                data_tuple[0]), " ".join(data_tuple[1])
             translation, _ = translate_sentence(
                 spacy_cv, src, self.SRC, self.TRG, self.model, self.device
             )
