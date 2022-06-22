@@ -6,7 +6,7 @@ import matplotlib.ticker as ticker
 import torch
 
 
-def train(model, iterator, optimizer, criterion, clip, **kwargs):
+def train(model, iterator, optimizer, criterion, clip, epoch, progress_bar, **kwargs):
     
     model.train()
 
@@ -16,7 +16,7 @@ def train(model, iterator, optimizer, criterion, clip, **kwargs):
     len_iterator = len(iterator)
 
     for i, batch in enumerate(iterator):
-        print(f" Training Iteration: {i+1:04}/{len_iterator}")
+
         src = batch.src
         trg = batch.trg
 
@@ -49,11 +49,15 @@ def train(model, iterator, optimizer, criterion, clip, **kwargs):
         optimizer.step()
 
         epoch_loss += loss.item()
+        progress_bar.set_postfix(
+            epoch=f" {epoch}, train loss= {round(epoch_loss / (i + 1), 4)}, train accu: {train_acc / (i + 1):.4f}", 
+            refresh=True)
+        progress_bar.update()
 
     return epoch_loss / len_iterator, train_acc / len_iterator
 
 
-def evaluate(model, iterator, criterion):
+def evaluate(model, iterator, criterion, epoch, progress_bar):
 
     model.eval()
 
@@ -88,6 +92,10 @@ def evaluate(model, iterator, criterion):
             train_acc += (correct_train) / target_count
 
             epoch_loss += loss.item()
+            progress_bar.set_postfix(
+                epoch=f" {epoch}, train loss= {round(epoch_loss / (i + 1), 4)}, train accu: {train_acc / (i + 1):.4f}", 
+                refresh=True)
+            progress_bar.update()
 
     return epoch_loss / len(iterator), train_acc / len(iterator)
     

@@ -1,5 +1,5 @@
-from attr import attrib, attrs
 from termcolor import colored
+from tqdm import tqdm
 import math
 import numpy as np
 
@@ -15,7 +15,7 @@ from src.encoder import Encoder
 from src.decoder import Decoder
 from src.seq2seq import Seq2Seq
 from src.gammar_checker import Grammar_checker
-from src.utils import display_attention, load_checkpoint, save_checkpoint, \
+from src.utils import display_attention, load_checkpoint, save_checkpoint,\
     translate_sentence, epoch_time, train, evaluate
 
 import time
@@ -54,13 +54,19 @@ torch.cuda.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 
 
-spacy_cv = spacy.load('pt_core_news_sm')
-spacy_en = spacy.load('en_core_web_sm')
 
+class Transformer_Translator:
 
-class Transformer_Translator():
+    spacy_models = {
+        "en": spacy.load("en_core_web_sm"),
+        "pt": spacy.load("pt_core_news_sm"),
+        "cv": spacy.load("pt_core_news_sm"),
+    }
 
-    def __init__(self) -> None:
+    def __init__(self, source_language: str, target_languague: str) -> None:
+
+        self.source_languague = source_language
+        self.target_languague = target_languague
 
         self.model = None
         self.optimizer = None
@@ -77,13 +83,13 @@ class Transformer_Translator():
 
     def get_dataset_data(self) -> None:
 
-        self.SRC = Field(tokenize=self.tokenize_cv,
+        self.SRC = Field(tokenize=self.tokenize_src,
                          init_token='<sos>',
                          eos_token='<eos>',
                          lower=True,
                          batch_first=True)
 
-        self.TRG = Field(tokenize=self.tokenize_en,
+        self.TRG = Field(tokenize=self.tokenize_trg,
                          init_token='<sos>',
                          eos_token='<eos>',
                          lower=True,
@@ -108,17 +114,17 @@ class Transformer_Translator():
 
         print(colored("=> Data has been collected and processed", 'cyan'))
 
-    def tokenize_cv(self, text: str):
+    def tokenize_src(self, text: str):
         """
             Tokenizes Cap-Verdian text from a string into a list of strings
         """
-        return [tok.text for tok in spacy_cv.tokenizer(text)]
+        return [tok.text for tok in self.spacy_models[self.source_languague].tokenizer(text)]
 
-    def tokenize_en(self, text: str):
+    def tokenize_trg(self, text: str):
         """
             Tokenizes English text from a string into a list of strings
         """
-        return [tok.text for tok in spacy_en.tokenizer(text)]
+        return [tok.text for tok in self.spacy_models[self.target_languague].tokenizer(text)]
 
     def setting_up_train_configurations(self) -> None:
         enc = Encoder(self.INPUT_DIM,
@@ -149,8 +155,11 @@ class Transformer_Translator():
         self.criterion = nn.CrossEntropyLoss(ignore_index=target_PAD_IDX)
 
         try:
-            load_checkpoint(torch.load("checkpoints/my_checkpoint.pth.tar"),
-                            self.model, self.optimizer)
+            load_checkpoint(
+                torch.load(
+                    f"checkpoints/transformer-{self.source_languague}-{self.target_languague}.pth.tar"),
+                self.model, self.optimizer
+            )
         except:
             print("No existent checkpoint to load.")
 
@@ -178,37 +187,41 @@ class Transformer_Translator():
         """
         # All stand alone metrics
         self.writer.add_scalar(
-            "Training Loss", train_loss, global_step=epoch)
+            f"Training Loss ({self.source_languague}-{self.target_languague})", 
+            train_loss, global_step=epoch)
         self.writer.add_scalar(
-            "Training Accuracy", train_accuracy, global_step=epoch)
+            f"Training Accuracy ({self.source_languague}-{self.target_languague})", 
+            train_accuracy, global_step=epoch)
         self.writer.add_scalar(
-            "Validation Loss", valid_loss, global_step=epoch)
+            f"Validation Loss ({self.source_languague}-{self.target_languague})", 
+            valid_loss, global_step=epoch)
         self.writer.add_scalar(
-            "Validation Accuracy", valid_accuracy, global_step=epoch)
+            f"Validation Accuracy ({self.source_languague}-{self.target_languague})", 
+            valid_accuracy, global_step=epoch)
         
         # Mixing Train Metrics
         self.writer.add_scalars(
-            "Training Metrics (Train Loss / Train Accurary)", {
-                "Train Loss": train_loss, "Train Accurary": train_accuracy},
+            f"Training Loss & Accurary ({self.source_languague}-{self.target_languague})", 
+            {"Train Loss": train_loss, "Train Accurary": train_accuracy},
             global_step=epoch
         )
 
         # Mixing Validation Metrics
         self.writer.add_scalars(
-            "Training Metrics (Validation Loss / Validation Accurary)", {
-                "Validation Loss": valid_loss, "Validation Accuracy": valid_accuracy},
+            f"Validation Loss & Accurary  ({self.source_languague}-{self.target_languague})", 
+            {"Validation Loss": valid_loss, "Validation Accuracy": valid_accuracy},
             global_step=epoch
         )
         
         # Mixing Train and Validation Metrics
         self.writer.add_scalars(
-            "Training Metrics (Train Loss / Validation Loss)", {
-                "Train Loss": train_loss, "Validation Loss": valid_loss},
+            f"Train Loss & Validation Loss ({self.source_languague}-{self.target_languague})", 
+            {"Train Loss": train_loss, "Validation Loss": valid_loss},
             global_step=epoch
         )
         self.writer.add_scalars(
-            "Training Metrics (Train Accurary / Validation Accuracy)", {
-                "Train Accurary": train_accuracy, "Validation Accuracy": valid_accuracy},
+            f"Train Accurary & Validation Accuracy ({self.source_languague}-{self.target_languague})",
+            {"Train Accurary": train_accuracy, "Validation Accuracy": valid_accuracy},
             global_step=epoch
         )
 
@@ -217,13 +230,20 @@ class Transformer_Translator():
         best_valid_loss = float('inf')
 
         for epoch in range(N_EPOCHS):
+            epoch = epoch + 1
+            progress_bar = tqdm(
+                total=len(self.train_iterator)+len(self.valid_iterator), 
+                bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', unit=' batches', ncols=200
+            )
 
             start_time = time.time()
 
-            train_loss, train_accuracy = train(self.model, self.train_iterator,
-                                               self.optimizer, self.criterion, CLIP)
+            train_loss, train_accuracy = train(
+                self.model, self.train_iterator, self.optimizer, self.criterion, 
+                CLIP, epoch, progress_bar)
+
             valid_loss, valid_accuracy = evaluate(
-                self.model, self.valid_iterator, self.criterion)
+                self.model, self.valid_iterator, self.criterion, epoch, progress_bar)
 
             end_time = time.time()
 
@@ -235,7 +255,9 @@ class Transformer_Translator():
                     "state_dict": self.model.state_dict(),
                     "optimizer": self.optimizer.state_dict(),
                 }
-                save_checkpoint(checkpoint, "checkpoints/my_checkpoint.pth.tar")
+                save_checkpoint(
+                    checkpoint, 
+                    f"checkpoints/transformer-{self.source_languague}-{self.target_languague}.pth.tar")
             self.show_train_metrics(
                 epoch, f"{epoch_mins}m {epoch_secs}s", train_loss,
                 train_accuracy, valid_loss, valid_accuracy
@@ -254,13 +276,13 @@ class Transformer_Translator():
 
     def generate_confusion_matrix(self, src: str) -> None:
         translation, attention = translate_sentence(
-            spacy_cv, src, self.SRC, self.TRG, self.model, self.device
+            self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device
         )
 
         print(f'Source (cv): {src}')
         print(colored(f'Predicted (en): {translation}', 'blue', attrs=['bold']))
 
-        display_attention(spacy_cv, src, translation, attention)
+        display_attention(self.spacy_models[self.source_languague], src, translation, attention)
 
     def test_model(self) -> None:
         test_data = self.get_test_data()
@@ -271,7 +293,7 @@ class Transformer_Translator():
             src, trg = " ".join(
                 data_tuple[0]), " ".join(data_tuple[1])
             translation, _ = translate_sentence(
-                spacy_cv, src, self.SRC, self.TRG, self.model, self.device
+                self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device
             )
             print(f'  Source (cv): {src}')
             print(colored(f'  Target (en): {trg}', attrs=['bold']))
@@ -284,7 +306,7 @@ class Transformer_Translator():
         while True:
             source = str(input(f'  Source (cv): '))
             translation, _ = translate_sentence(
-                spacy_cv, source, self.SRC, self.TRG, self.model, self.device)
+                self.spacy_models[self.source_languague], source, self.SRC, self.TRG, self.model, self.device)
 
             print(
                 colored(f'  Predicted (en): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold'])
@@ -292,7 +314,7 @@ class Transformer_Translator():
 
     def get_translation(self, sentence: str) -> str:
         translation, _ = translate_sentence(
-            spacy_cv, sentence, self.SRC, self.TRG, self.model, self.device)
+            self.spacy_models[self.source_languague], sentence, self.SRC, self.TRG, self.model, self.device)
 
         return self.untokenize_sentence(translation)
 
@@ -327,7 +349,7 @@ class Transformer_Translator():
 
             for _ in range(3):
                 prediction, _ = translate_sentence(
-                    spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
+                    self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device)
                 predictions.append(prediction[:-1])
 
             print(f'  Source (cv): {" ".join(src)}')
@@ -359,7 +381,7 @@ class Transformer_Translator():
 
             for _ in range(4):
                 prediction, _ = translate_sentence(
-                    spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
+                    self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device)
                 
                 prediction = self.remove_special_notation(prediction)
                 predictions.append(" ".join(prediction))
@@ -390,7 +412,7 @@ class Transformer_Translator():
             trg = vars(example)["trg"]
 
             prediction, _ = translate_sentence(
-                spacy_cv, src, self.SRC, self.TRG, self.model, self.device)
+                self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device)
             
             prediction = self.remove_special_notation(prediction)
 
