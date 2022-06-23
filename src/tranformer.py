@@ -324,9 +324,12 @@ class Transformer_Translator:
             Method to untokenize the pedicted translation.
             Returning it on as an str, with some grammar checks.
         """
-        tokens = [token for token in tokens if token not in self.special_tokens]
-        translated_sentence = TreebankWordDetokenizer().detokenize(tokens)
-        return self.grammar.check_sentence(translated_sentence)
+        tokens = self.remove_special_notation(tokens)
+        if self.source_languague == "cv":
+            translated_sentence = TreebankWordDetokenizer().detokenize(tokens)
+            return self.grammar.check_sentence(translated_sentence)
+        
+        return " ".join(translated_sentence)
 
     def remove_special_notation(self, sentence: list):
         return [token for token in sentence if token not in self.special_tokens]
