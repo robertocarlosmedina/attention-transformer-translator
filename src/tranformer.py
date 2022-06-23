@@ -32,7 +32,7 @@ from torchtext.data.metrics import bleu_score
 
 
 SEED = 1234
-BATCH_SIZE = 10
+BATCH_SIZE = 18
 HID_DIM = 256
 ENC_LAYERS = 4
 DEC_LAYERS = 4
@@ -96,7 +96,8 @@ class Transformer_Translator:
                          batch_first=True)
 
         self.train_data, self.valid_data, self.test_data = Multi30k.splits(
-            exts=(".cv", ".en"), fields=(self.SRC, self.TRG),
+            exts=(f".{self.source_languague}", f".{self.target_languague}"), 
+            fields=(self.SRC, self.TRG),
             test="test", path=".data/criolSet"
         )
 
