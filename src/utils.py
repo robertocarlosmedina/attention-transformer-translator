@@ -1,3 +1,6 @@
+import os
+import zipfile
+import shutil
 from termcolor import colored
 
 import matplotlib.pyplot as plt
@@ -54,6 +57,8 @@ def train(model, iterator, optimizer, criterion, clip, epoch, progress_bar, **kw
             refresh=True)
         progress_bar.update()
 
+    print("\n")
+
     return epoch_loss / len_iterator, train_acc / len_iterator
 
 
@@ -96,6 +101,8 @@ def evaluate(model, iterator, criterion, epoch, progress_bar):
                 epoch=f" {epoch}, train loss= {round(epoch_loss / (i + 1), 4)}, train accu: {train_acc / (i + 1):.4f}", 
                 refresh=True)
             progress_bar.update()
+    
+    print("\n")
 
     return epoch_loss / len(iterator), train_acc / len(iterator)
     
@@ -190,3 +197,29 @@ def load_checkpoint(checkpoint, model, optimizer):
     print(colored("=> Loading checkpoint", "cyan"))
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
+
+
+def download_crioleSet() -> None:
+    try:
+        os.system("wget https://github.com/robertocarlosmedina/crioleSet/archive/main.zip")
+        zip_object = zipfile.ZipFile(f"main.zip", "r")
+        zip_object.extractall(".data")
+        os.rename(".data/crioleSet-main", ".data/crioleSet")
+        os.remove(".data/crioleSet/main.py")
+        os.remove(".data/crioleSet/README.md")
+        os.remove(".data/crioleSet/RULES USED.txt")
+        shutil.rmtree(".data/crioleSet/src")
+        os.remove("main.zip")
+
+        print(
+            colored("==> The crioleSet dataset has been added to the project", attrs=["bold"]))
+    except:
+        print(
+            colored("==> Error downloading the crioleSet dataset", "red", attrs=["bold"]))
+
+
+def check_dataset() -> None:
+    if not os.path.isdir(".data"):
+        download_crioleSet()
+    else: 
+        print(colored("==> The crioleSet is in the project", attrs=["bold"]))

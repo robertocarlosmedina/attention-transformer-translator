@@ -16,7 +16,7 @@ from src.decoder import Decoder
 from src.seq2seq import Seq2Seq
 from src.gammar_checker import Grammar_checker
 from src.utils import display_attention, load_checkpoint, save_checkpoint,\
-    translate_sentence, epoch_time, train, evaluate
+    translate_sentence, epoch_time, train, evaluate, check_dataset
 
 import time
 
@@ -72,6 +72,8 @@ class Transformer_Translator:
         self.optimizer = None
         self.criterion = None
 
+        check_dataset()
+
         self.grammar = Grammar_checker()
         self.special_tokens = ['<sos>', '<eos>', '<pad>', '<unk>']
         self.writer = SummaryWriter()
@@ -98,7 +100,7 @@ class Transformer_Translator:
         self.train_data, self.valid_data, self.test_data = Multi30k.splits(
             exts=(f".{self.source_languague}", f".{self.target_languague}"), 
             fields=(self.SRC, self.TRG),
-            test="test", path=".data/criolSet"
+            test="test", path=".data/crioleSet"
         )
 
         self.SRC.build_vocab(self.train_data, min_freq=2)
@@ -162,7 +164,7 @@ class Transformer_Translator:
                 self.model, self.optimizer
             )
         except:
-            print("No existent checkpoint to load.")
+            print(colored("No existent checkpoint to load.", "red", attrs=["bold"]))
 
     def count_model_parameters(self) -> None:
         print(
