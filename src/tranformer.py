@@ -42,7 +42,7 @@ ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
-LEARNING_RATE = 0.00033
+LEARNING_RATE = 0.0003
 N_EPOCHS = 500
 CLIP = 1
 
@@ -52,7 +52,6 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
-
 
 
 class Transformer_Translator:
