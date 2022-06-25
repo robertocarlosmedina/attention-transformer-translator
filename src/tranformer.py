@@ -34,15 +34,15 @@ from torchtext.data.metrics import bleu_score
 SEED = 1234
 BATCH_SIZE = 12
 HID_DIM = 256
-ENC_LAYERS = 6
-DEC_LAYERS = 6
+ENC_LAYERS = 4
+DEC_LAYERS = 4
 ENC_HEADS = 8
 DEC_HEADS = 8
 ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
-LEARNING_RATE = 3e-6
+LEARNING_RATE = 6e-6
 N_EPOCHS = 500
 CLIP = 1
 
@@ -160,15 +160,17 @@ class Transformer_Translator:
         try:
             load_checkpoint(
                 torch.load(
-                    f"checkpoints/transformer-{self.source_languague}-{self.target_languague}.pth.tar"),
+                    f"checkpoints/transformer-{self.source_languague}-{self.target_languague}.pth.tar",
+                    map_location='cpu'),
                 self.model, self.optimizer
             )
-        except:
+        except Exception as e:
+            print("\n", e, "\n")
             print(colored("No existent checkpoint to load.", "red", attrs=["bold"]))
 
     def count_model_parameters(self) -> None:
-        print(
-            f'\nThe model has {count_parameters(self.model):,} trainable parameters')
+        total_parameters =  sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print(colored(f'\n==> The model has {total_parameters:,} trainable parameters\n', 'blue'))
 
     def initialize_weights(self, m):
         if hasattr(m, 'weight') and m.weight.dim() > 1:
