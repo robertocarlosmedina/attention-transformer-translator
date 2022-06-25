@@ -32,7 +32,7 @@ from torchtext.data.metrics import bleu_score
 
 
 SEED = 1234
-BATCH_SIZE = 12
+BATCH_SIZE = 32
 HID_DIM = 256
 ENC_LAYERS = 4
 DEC_LAYERS = 4
@@ -153,7 +153,7 @@ class Transformer_Translator:
                              target_PAD_IDX, self.device).to(self.device)
 
         self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=LEARNING_RATE)
+            self.model.parameters())
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=target_PAD_IDX)
 
