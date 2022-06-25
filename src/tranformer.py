@@ -232,7 +232,6 @@ class Transformer_Translator:
 
     def train_model(self) -> None:
 
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.1)
         best_valid_loss = float('inf')
 
         for epoch in range(N_EPOCHS):
@@ -254,8 +253,6 @@ class Transformer_Translator:
             end_time = time.time()
 
             epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-
-            scheduler.step()
 
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
