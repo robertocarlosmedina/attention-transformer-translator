@@ -32,7 +32,7 @@ from torchtext.data.metrics import bleu_score
 
 
 SEED = 1234
-BATCH_SIZE = 18
+BATCH_SIZE = 64
 HID_DIM = 256
 ENC_LAYERS = 3
 DEC_LAYERS = 3
@@ -42,7 +42,7 @@ ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
-LEARNING_RATE = 3e-5
+LEARNING_RATE = 0.00003
 N_EPOCHS = 500
 CLIP = 1
 
