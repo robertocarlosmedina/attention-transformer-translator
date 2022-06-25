@@ -32,7 +32,7 @@ from torchtext.data.metrics import bleu_score
 
 
 SEED = 1234
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 HID_DIM = 256
 ENC_LAYERS = 4
 DEC_LAYERS = 4
@@ -42,7 +42,7 @@ ENC_PF_DIM = 512
 DEC_PF_DIM = 512
 ENC_DROPOUT = 0.1
 DEC_DROPOUT = 0.1
-LEARNING_RATE = 3e-6
+LEARNING_RATE = 0.0035
 N_EPOCHS = 500
 CLIP = 1
 
@@ -232,6 +232,7 @@ class Transformer_Translator:
 
     def train_model(self) -> None:
 
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.1)
         best_valid_loss = float('inf')
 
         for epoch in range(N_EPOCHS):
@@ -253,6 +254,8 @@ class Transformer_Translator:
             end_time = time.time()
 
             epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+            scheduler.step()
 
             if valid_loss < best_valid_loss:
                 best_valid_loss = valid_loss
