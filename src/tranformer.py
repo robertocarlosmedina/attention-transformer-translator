@@ -40,8 +40,8 @@ ENC_HEADS = 8
 DEC_HEADS = 8
 ENC_PF_DIM = 512
 DEC_PF_DIM = 512
-ENC_DROPOUT = 0.1
-DEC_DROPOUT = 0.1
+ENC_DROPOUT = 0.2
+DEC_DROPOUT = 0.2
 LEARNING_RATE = 0.05
 N_EPOCHS = 500
 CLIP = 1
@@ -152,7 +152,7 @@ class Transformer_Translator:
                              target_PAD_IDX, self.device).to(self.device)
 
         self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=LEARNING_RATE)
+            self.model.parameters())
 
         self.criterion = nn.CrossEntropyLoss(ignore_index=target_PAD_IDX)
 
