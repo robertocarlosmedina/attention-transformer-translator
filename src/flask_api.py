@@ -2,7 +2,7 @@ from flask_restful import Api, Resource, reqparse
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-from src.tranformer import Transformer_Translator
+from transformer import Transformer_Translator
 
 
 app = Flask(__name__)

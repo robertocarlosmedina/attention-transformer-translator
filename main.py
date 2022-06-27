@@ -38,7 +38,7 @@ if args["source"] == args["target"]:
     exit(1)
 
 
-from src.tranformer import Transformer_Translator
+from src.transformer import Transformer_Translator
 # from src.flask_api import Resfull_API
 
 
