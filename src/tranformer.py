@@ -28,7 +28,6 @@ from torch.utils.tensorboard import SummaryWriter
 import torchtext
 from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
-from torchtext.data.metrics import bleu_score
 from nltk.translate.bleu_score import sentence_bleu
 
 
