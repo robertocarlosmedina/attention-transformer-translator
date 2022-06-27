@@ -346,8 +346,6 @@ class Transformer_Translator:
             the quality of text which has been machine-translated from one natural 
             language to another.
         """
-        targets = []
-        outputs = []
         blue_scores = []
 
         for example in self.test_data:
@@ -369,9 +367,6 @@ class Transformer_Translator:
 
             score = sentence_bleu(predictions, trg)
             blue_scores.append(score if score <= 1 else 1)
-
-            targets.append(trg)
-            outputs.append(predictions)
 
         score =  sum(blue_scores) /len(blue_scores)
         print(colored(f"==> Bleu score: {score * 100:.2f}\n", 'blue'))
