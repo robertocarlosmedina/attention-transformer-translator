@@ -29,6 +29,7 @@ import torchtext
 from torchtext.datasets import Multi30k
 from torchtext.data import Field, BucketIterator
 from torchtext.data.metrics import bleu_score
+from nltk.translate.bleu_score import sentence_bleu
 
 
 SEED = 1234
@@ -332,7 +333,7 @@ class Transformer_Translator:
             translated_sentence = TreebankWordDetokenizer().detokenize(tokens)
             return self.grammar.check_sentence(translated_sentence)
         
-        return " ".join(translated_sentence)
+        return " ".join(tokens)
 
     def remove_special_notation(self, sentence: list):
         return [token for token in sentence if token not in self.special_tokens]
@@ -348,6 +349,7 @@ class Transformer_Translator:
         """
         targets = []
         outputs = []
+        blue_scores = []
 
         for example in self.test_data:
             src = vars(example)["src"]
@@ -366,10 +368,13 @@ class Transformer_Translator:
                 for prediction in predictions]
             print("\n")
 
+            score = sentence_bleu(predictions, trg)
+            blue_scores.append(score if score <= 1 else 1)
+
             targets.append(trg)
             outputs.append(predictions)
 
-        score = bleu_score(targets, outputs)
+        score =  sum(blue_scores) /len(blue_scores)
         print(colored(f"==> Bleu score: {score * 100:.2f}\n", 'blue'))
 
     def calculate_meteor_score(self):
@@ -393,9 +398,7 @@ class Transformer_Translator:
                 prediction = self.remove_special_notation(prediction)
                 predictions.append(" ".join(prediction))
 
-            all_meteor_scores.append(meteor_score(
-                predictions, trg
-            ))
+            all_meteor_scores.append(meteor_score(predictions, trg))
             print(f'  Source (cv): {" ".join(src)}')
             print(colored(f'  Target (en): {trg}', attrs=['bold']))
             print(colored(f'  Predictions (en): ', 'blue', attrs=['bold']))
