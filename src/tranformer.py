@@ -359,13 +359,6 @@ class Transformer_Translator:
                     self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device)
                 predictions.append(prediction[:-1])
 
-            # print(f'  Source (cv): {" ".join(src)}')
-            # print(colored(f'  Target (en): {trg}', attrs=['bold']))
-            # print(colored(f'  Predictions (en):', 'blue'))
-            # [print(colored(f'      - {prediction}', 'blue', attrs=['bold'])) 
-            #     for prediction in predictions]
-            # print("\n")
-
             score = sentence_bleu(predictions, trg)
             blue_scores.append(score if score <= 1 else 1)
 
@@ -399,7 +392,7 @@ class Transformer_Translator:
             score = meteor_score(predictions, trg)
             all_meteor_scores.append(score)
 
-            progress_bar(i+1, len_test_data, f"BLUE score: {round(score, 8)}", "phases")
+            progress_bar(i+1, len_test_data, f"METEOR score: {round(score, 8)}", "phases")
 
         score = sum(all_meteor_scores)/len(all_meteor_scores)
         print(colored(f"\n\n==> Meteor score: {score * 100:.2f}\n", 'blue'))
@@ -411,8 +404,9 @@ class Transformer_Translator:
             machine-translated output into a human translated reference.
         """
         all_translation_ter = 0
+        len_test_data = len(self.test_data)
 
-        for example in self.test_data:
+        for i, example in enumerate(self.test_data):
             src = vars(example)["src"]
             trg = vars(example)["trg"]
 
@@ -421,12 +415,11 @@ class Transformer_Translator:
             
             prediction = self.remove_special_notation(prediction)
 
-            print(f'  Source (cv): {" ".join(src)}')
-            print(colored(f'  Target (en): {" ".join(trg)}', attrs=['bold']))
-            print(colored(f'  Predictions (en): {" ".join(prediction)}\n', 'blue', attrs=['bold']))
+            score = ter(prediction, trg)
+            all_translation_ter += score
+            progress_bar(i+1, len_test_data, f"TER score: {round(score, 8)}", "phases")
 
-            all_translation_ter += ter(prediction, trg)
-        print(colored(f"==>TER score: {all_translation_ter/len(self.test_data) * 100:.2f}", 'blue'))
+        print(colored(f"\n\n==>TER score: {all_translation_ter/len(self.test_data) * 100:.2f}\n", 'blue'))
 
     def count_hyperparameters(self) -> None:
         total_parameters =  sum(p.numel() for p in self.model.parameters() if p.requires_grad)
