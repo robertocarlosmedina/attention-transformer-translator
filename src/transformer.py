@@ -283,8 +283,8 @@ class Transformer_Translator:
             self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device
         )
 
-        print(f'Source (cv): {src}')
-        print(colored(f'Predicted (en): {translation}', 'blue', attrs=['bold']))
+        print(f'Source ({self.source_languague}): {src}')
+        print(colored(f'Predicted ({self.target_languague}): {translation}', 'blue', attrs=['bold']))
 
         display_attention(self.spacy_models[self.source_languague], src, translation, attention)
 
@@ -299,21 +299,21 @@ class Transformer_Translator:
             translation, _ = translate_sentence(
                 self.spacy_models[self.source_languague], src, self.SRC, self.TRG, self.model, self.device
             )
-            print(f'  Source (cv): {src}')
-            print(colored(f'  Target (en): {trg}', attrs=['bold']))
-            print(colored(f'  Predicted (en): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold']))
+            print(f'  Source ({self.source_languague}): {src}')
+            print(colored(f'  Target ({self.target_languague}): {trg}', attrs=['bold']))
+            print(colored(f'  Predicted ({self.target_languague}): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold']))
 
     def console_model_test(self) -> None:
         os.system("clear")
         print("\n                     CV Creole Translator ")
         print("-------------------------------------------------------------\n")
         while True:
-            source = str(input(f'  Source (cv): '))
+            source = str(input(f'  Source ({self.source_languague}): '))
             translation, _ = translate_sentence(
                 self.spacy_models[self.source_languague], source, self.SRC, self.TRG, self.model, self.device)
 
             print(
-                colored(f'  Predicted (en): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold'])
+                colored(f'  Predicted ({self.target_languague}): {self.untokenize_sentence(translation)}\n', 'blue', attrs=['bold'])
             )
 
     def get_translation(self, sentence: str) -> str:
