@@ -39,7 +39,6 @@ if args["source"] == args["target"]:
 
 
 from src.transformer import Transformer_Translator
-# from src.flask_api import Resfull_API
 
 
 transformer_translator = Transformer_Translator(args["source"], args["target"])
@@ -58,7 +57,6 @@ def execute_main_actions():
         "console": transformer_translator.console_model_test,
         "train": transformer_translator.train_model,
         "test_model": transformer_translator.test_model,
-        # "flask_api": Resfull_API.start,
         "blue_score": transformer_translator.calculate_blue_score,
         "meteor_score": transformer_translator.calculate_meteor_score, 
         "confusion_matrix": make_matrix_confusion,
