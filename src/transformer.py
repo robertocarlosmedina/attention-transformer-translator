@@ -419,7 +419,7 @@ class Transformer_Translator:
             all_translation_ter += score
             progress_bar(i+1, len_test_data, f"TER score: {round(score, 8)}", "phases")
 
-        print(colored(f"\n\n==>TER score: {all_translation_ter/len(self.test_data) * 100:.2f}\n", 'blue'))
+        print(colored(f"\n\n==> TER score: {all_translation_ter/len(self.test_data) * 100:.2f}\n", 'blue'))
 
     def count_hyperparameters(self) -> None:
         total_parameters =  sum(p.numel() for p in self.model.parameters() if p.requires_grad)
