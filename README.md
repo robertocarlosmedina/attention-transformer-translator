@@ -1,5 +1,5 @@
 # Transformer Implementation for Machine Translation (MT)
-### _Automatic translation system to carry out translations from Cape Verdean Creole to English and vice versa_
+### _Machine Translation (MT) system to carry out translations from Cape Verdean Creole to English and vice versa_
 
 The transformer model is a model proposed by [Vaswani et al. (2017)] and is one of the most important contributions to the research community in the field of Artificial Intelligence (AI). More precisely, the Transformer model obtained excellent results in Natural Language Processing (NLP) tasks such as MT.
 
